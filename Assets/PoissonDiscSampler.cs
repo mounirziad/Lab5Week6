@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-public class PoissonDiscSampler : MonoBehaviour
+public class PoissonDiscSampler
 {
     private const int k = 30;  // Maximum number of attempts before marking a sample as inactive.
 
@@ -36,8 +36,10 @@ public class PoissonDiscSampler : MonoBehaviour
         while (activeSamples.Count > 0)
         {
 
-            // Pick a random active sample
-            int i = (int)Random.value * activeSamples.Count;
+            int i = (int)(Random.value * activeSamples.Count);
+            if (i < 0 || i >= activeSamples.Count)
+                continue; // skip invalid indices safely
+
             Vector2 sample = activeSamples[i];
 
             // Try `k` random candidates between [radius, 2 * radius] from that sample.

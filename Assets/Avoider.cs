@@ -1,126 +1,156 @@
-using UnityEngine;
-using System.Collections;
+﻿using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.AI;
-using TMPro;
 
-[RequireComponent(typeof(NavMesh))]
+[RequireComponent(typeof(NavMeshAgent))]
 public class Avoider : MonoBehaviour
 {
-    [Tooltip("The agent")]
+    [Tooltip("The agent that will avoid the avoidee")]
     public NavMeshAgent agent;
 
     [Tooltip("The object this agent will avoid")]
     public GameObject avoidee;
 
-    public float RangeValue;
+    [Tooltip("How close the avoidee can get before avoidance kicks in")]
+    public float RangeValue = 10f;
 
-    public float SpeedValue;
+    [Tooltip("Speed at which the avoider escapes")]
+    public float SpeedValue = 3.5f;
 
-    public bool showgizmos = true;
-
-    private bool isAvoiding = false;
-
-    private List<Vector3> pointsplayercansee = new List<Vector3>();
-
-
-    private List<Vector3> hidingspot = new List<Vector3>();
+    [Tooltip("Toggle gizmo visualization")]
+    public bool showGizmos = true;
 
     public Vector2 samplingArea = new Vector2(20f, 20f);
 
-    RaycastHit hit;
+    private bool isAvoiding = false;
+    private List<Vector3> hidingSpots = new List<Vector3>();
+    private RaycastHit hit;
 
 #if UNITY_EDITOR
-
     private void OnValidate()
     {
-        if(avoidee == null)
+        if (avoidee == null)
         {
-            Debug.LogWarning("An avoidee is required to run this project. Please create the avoidee object and assign it in inspector");
-
+            Debug.LogWarning("An avoidee is required to run this project. Please assign it in the inspector.");
         }
         if (agent == null)
         {
-            Debug.LogWarning("A navmeshagent is required to run this project. Please make the object a NavMesh Agent and bake a NavMesh");
+            Debug.LogWarning("A NavMeshAgent is required to run this project. Please add one and bake a NavMesh.");
         }
     }
-
 #endif
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+
     void Start()
     {
-        agent = GetComponent<NavMeshAgent>();
+        if (agent == null) agent = GetComponent<NavMeshAgent>();
+        agent.speed = SpeedValue;
     }
 
-    // Update is called once per frame
     void Update()
     {
-        if(agent == null || avoidee == null)
-        {
-            return;
-        }
+        if (agent == null || avoidee == null) return;
 
         RotationLogic();
+
+        float distance = Vector3.Distance(transform.position, avoidee.transform.position);
+
+        if (distance <= RangeValue && !isAvoiding)
+        {
+            FindSpot();
+        }
     }
 
-    public void RotationLogic()
+    private void RotationLogic()
     {
-        Vector3 directiontoavoidee = (avoidee.transform.position - transform.position).normalized;
-
-        if (directiontoavoidee != Vector3.zero)
+        Vector3 direction = (avoidee.transform.position - transform.position).normalized;
+        if (direction != Vector3.zero)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(new Vector3(directiontoavoidee.x, 0, directiontoavoidee.z));
-
+            Quaternion targetRotation = Quaternion.LookRotation(new Vector3(direction.x, 0, direction.z));
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 5f);
         }
     }
 
-    public void FindSpot()
+    private void FindSpot()
     {
         isAvoiding = true;
+        hidingSpots.Clear();
 
-        PoissonDiscSampler poissonDiscSampler = new PoissonDiscSampler(samplingArea.x, samplingArea.y, 5);
+        PoissonDiscSampler sampler = new PoissonDiscSampler(samplingArea.x, samplingArea.y, 3);
 
-        foreach (var point in poissonDiscSampler.Samples())
+        foreach (var point in sampler.Samples())
         {
-            Vector3 sampleWorldPoint = transform.position + new Vector3(point.x - samplingArea.x / 2, 0, point.y - samplingArea.y / 2);
+            Vector3 worldPoint = transform.position + new Vector3(point.x - samplingArea.x / 2, 0, point.y - samplingArea.y / 2);
 
-            if (CheckVisibility(sampleWorldPoint) == false)
+            // Check if this point is not visible to the avoidee
+            if (!CheckVisibility(worldPoint))
             {
-                LineRenderer lineRenderer = new LineRenderer();
-                lineRenderer.startColor = Color.green;
-                lineRenderer.endColor = Color.green;
+                hidingSpots.Add(worldPoint);
             }
         }
+
+        if (hidingSpots.Count > 0)
+        {
+            // Choose the closest hiding spot
+            Vector3 bestSpot = hidingSpots[0];
+            float minDist = Vector3.Distance(transform.position, bestSpot);
+
+            foreach (var spot in hidingSpots)
+            {
+                float dist = Vector3.Distance(transform.position, spot);
+                if (dist < minDist)
+                {
+                    bestSpot = spot;
+                    minDist = dist;
+                }
+            }
+
+            // Move the agent to that spot
+            agent.SetDestination(bestSpot);
+        }
+        else
+        {
+            // fallback: run directly away from player
+            Vector3 dirAway = (transform.position - avoidee.transform.position).normalized;
+            Vector3 runPoint = transform.position + dirAway * RangeValue;
+            agent.SetDestination(runPoint);
+        }
+
+        isAvoiding = false;
     }
 
     private bool CheckVisibility(Vector3 point)
     {
-        if (Physics.Raycast(point + Vector3.up, (avoidee.transform.position - transform.position).normalized, out hit, RangeValue))
+        Vector3 eyePos = avoidee.transform.position + Vector3.up * 1.5f;
+        Vector3 dir = point - eyePos;
+        float dist = dir.magnitude;
+
+        // If avoidee has a clear line to the point, then it's visible
+        if (Physics.Raycast(eyePos, dir.normalized, out hit, dist))
         {
-            if (hit.transform != avoidee)
-            {
+            // If the ray hit something *before* the hiding point, then it's blocked
+            if (hit.collider.gameObject != gameObject)
                 return false;
-            }
-            else
-            {
-                return true;
-            }
         }
 
+        // No obstruction → avoidee can see this point
         return true;
     }
 
+
     private void OnDrawGizmos()
     {
-        if(showgizmos == true)
-        {
-            Gizmos.DrawWireSphere(transform.position, 5);
-        }
+        if (!showGizmos) return;
 
-        if(showgizmos == false)
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, RangeValue);
+
+        Gizmos.color = Color.green;
+        if (hidingSpots != null)
         {
-            return;
+            foreach (var spot in hidingSpots)
+            {
+                Gizmos.DrawSphere(spot, 0.2f);
+            }
         }
     }
 }
