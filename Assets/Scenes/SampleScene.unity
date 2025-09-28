@@ -270,6 +270,7 @@ GameObject:
   - component: {fileID: 353472377}
   - component: {fileID: 353472376}
   - component: {fileID: 353472375}
+  - component: {fileID: 353472381}
   m_Layer: 0
   m_Name: Avoider (1)
   m_TagString: Untagged
@@ -284,7 +285,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 353472374}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c906744576ae026418579ad68dff195b, type: 3}
   m_Name: 
@@ -411,6 +412,24 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &353472381
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 353472374}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 219985956, guid: 9513d23f631baf048a2228836b5f44a3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DLL.dll::DLL.Avoider
+  agent: {fileID: 353472376}
+  avoidee: {fileID: 1632183179}
+  RangeValue: 10
+  SpeedValue: 3.5
+  showGizmos: 1
+  samplingArea: {x: 20, y: 20}
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -601,6 +620,7 @@ GameObject:
   - component: {fileID: 942372472}
   - component: {fileID: 942372477}
   - component: {fileID: 942372476}
+  - component: {fileID: 942372478}
   m_Layer: 0
   m_Name: Avoider
   m_TagString: Untagged
@@ -709,7 +729,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 942372471}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c906744576ae026418579ad68dff195b, type: 3}
   m_Name: 
@@ -742,6 +762,24 @@ NavMeshAgent:
   m_BaseOffset: 1
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!114 &942372478
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 942372471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 219985956, guid: 9513d23f631baf048a2228836b5f44a3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DLL.dll::DLL.Avoider
+  agent: {fileID: 942372477}
+  avoidee: {fileID: 1632183179}
+  RangeValue: 10
+  SpeedValue: 3.5
+  showGizmos: 1
+  samplingArea: {x: 20, y: 20}
 --- !u!1 &1023943923
 GameObject:
   m_ObjectHideFlags: 0
